@@ -6,6 +6,7 @@
  * detail: create
  * modify: 2014-10-21
  * detail: windows support.
+ *
 ************************************************/
 
 #ifndef _LOG_H_
