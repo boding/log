@@ -3,19 +3,51 @@
  * file  : Log.h
  * author: bobding
  * date  : 2014-09-24
- * detail:
- *
+ * detail: create
+ * modify: 2014-10-21
+ * detail: windows support.
 ************************************************/
 
 #ifndef _LOG_H_
 #define _LOG_H_
 
 #include <stdio.h>
-#include <unistd.h>
 #include <stdarg.h>
 #include <memory.h>
 #include <time.h>
-#include <sys/time.h>
+
+#if defined(_WIN32) || defined(_WIN64)
+    #include <windows.h>
+    #include <winsock.h>
+    #include <string.h>
+    #include <io.h>
+
+    #define F_OK 0
+    #define snprintf _snprintf
+
+    static int gettimeofday(struct timeval* tv, void* tzp)
+    {
+        SYSTEMTIME wtm;
+        GetLocalTime(&wtm);
+
+        struct tm tm;
+        tm.tm_year = wtm.wYear - 1900;
+        tm.tm_mon = wtm.wMonth - 1;
+        tm.tm_mday = wtm.wDay;
+        tm.tm_hour = wtm.wHour;
+        tm.tm_min = wtm.wMinute;
+        tm.tm_sec = wtm.wSecond;
+        tm.tm_isdst = -1;
+
+        tv->tv_sec = (long)mktime(&tm);
+        tv->tv_usec = wtm.wMilliseconds * 1000;
+
+        return 0;
+    }
+#else
+    #include <unistd.h>
+    #include <sys/time.h>
+#endif
 
 #define LogCritical Log::Instance()->Critical
 #define LogError    Log::Instance()->Error
@@ -165,7 +197,8 @@ protected:
             return strDate;
         }
 
-        struct tm* pt = localtime(&tv.tv_sec);
+        time_t tm = tv.tv_sec;
+        struct tm* pt = localtime((const time_t*)&tm);
         snprintf(strDate, 127, "%d-%02d-%02d %02d:%02d:%02d.%03d", pt->tm_year + 1900, pt->tm_mon + 1, pt->tm_mday, pt->tm_hour, pt->tm_min, pt->tm_sec, (int)(tv.tv_usec / 1000));
 
         return strDate;
